@@ -386,44 +386,58 @@ elif reporting_mode == 'wirenboard-mqtt':
 print_line('Initialization complete, starting MQTT publish loop', console=False, sd_notify=True)
 
 
+def poll_data():
+    data = OrderedDict()
+    attempts = 2
+    flora['poller']._cache = None
+    flora['poller']._last_read = None
+    flora['stats']['count'] += 1
+    print_line('Retrieving data from sensor "{}" ...'.format(flora['name_pretty']))
+    while attempts != 0 and not flora['poller']._cache:
+        try:
+            flora['poller'].fill_cache()
+            flora['poller'].parameter_value(MI_LIGHT)
+        except (IOError, BluetoothBackendException, BTLEException, RuntimeError, BrokenPipeError) as e:
+            attempts -= 1
+            if attempts > 0:
+                if len(str(e)) > 0:
+                    print_line('Retrying due to exception: {}'.format(e), error=True)
+                else:
+                    print_line('Retrying ...', warning=True)
+            flora['poller']._cache = None
+            flora['poller']._last_read = None
+
+    if not flora['poller']._cache:
+        flora['stats']['failure'] += 1
+        if reporting_mode == 'mqtt-homie':
+            mqtt_client[flora_name.lower()].publish('{}/{}/$state'.format(base_topic, flora_name.lower()), 'disconnected', 1, True)
+        print_line('Failed to retrieve data from Mi Flora sensor "{}" ({}), success rate: {:.0%}'.format(
+            flora['name_pretty'], flora['mac'], flora['stats']['success']/flora['stats']['count']
+            ), error = True, sd_notify = True)
+        print()
+    else:
+        flora['stats']['success'] += 1
+
+    for param,_ in parameters.items():
+        data[param] = flora['poller'].parameter_value(param)
+    print_line('Result: {}'.format(json.dumps(data)))
+    return data
+
+
 # Sensor data retrieval and publication
 while True:
     for [flora_name, flora] in flores.items():
         data = OrderedDict()
-        attempts = 2
-        flora['poller']._cache = None
-        flora['poller']._last_read = None
-        flora['stats']['count'] += 1
-        print_line('Retrieving data from sensor "{}" ...'.format(flora['name_pretty']))
-        while attempts != 0 and not flora['poller']._cache:
-            try:
-                flora['poller'].fill_cache()
-                flora['poller'].parameter_value(MI_LIGHT)
-            except (IOError, BluetoothBackendException, BTLEException, RuntimeError, BrokenPipeError) as e:
-                attempts -= 1
-                if attempts > 0:
-                    if len(str(e)) > 0:
-                        print_line('Retrying due to exception: {}'.format(e), error=True)
-                    else:
-                        print_line('Retrying ...', warning=True)
-                flora['poller']._cache = None
-                flora['poller']._last_read = None
+        cachedData = []
 
-        if not flora['poller']._cache:
-            flora['stats']['failure'] += 1
-            if reporting_mode == 'mqtt-homie':
-                mqtt_client[flora_name.lower()].publish('{}/{}/$state'.format(base_topic, flora_name.lower()), 'disconnected', 1, True)
-            print_line('Failed to retrieve data from Mi Flora sensor "{}" ({}), success rate: {:.0%}'.format(
-                flora['name_pretty'], flora['mac'], flora['stats']['success']/flora['stats']['count']
-                ), error = True, sd_notify = True)
-            print()
-            continue
-        else:
-            flora['stats']['success'] += 1
+        for i in range(1, 10):
+            cachedData[i] = poll_data()
+            flora['poller'].clear_cache()
+            sleep(0.5)
 
-        for param,_ in parameters.items():
-            data[param] = flora['poller'].parameter_value(param)
-        print_line('Result: {}'.format(json.dumps(data)))
+        for item in cachedData:
+            for key in item:
+                data[key] = sum(item[key]) / len(item[key])
 
         if reporting_mode == 'mqtt-json':
             print_line('Publishing to MQTT topic "{}/{}"'.format(base_topic, flora_name))
