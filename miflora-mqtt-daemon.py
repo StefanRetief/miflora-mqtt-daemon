@@ -431,7 +431,7 @@ while True:
         cachedData = []
 
         for i in range(1, 10):
-            cachedData[i] = poll_data()
+            cachedData.append(poll_data())
             flora['poller'].clear_cache()
             sleep(0.5)
 
