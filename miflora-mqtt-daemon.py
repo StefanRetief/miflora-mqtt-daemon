@@ -117,6 +117,8 @@ else:
 
 base_topic = config['MQTT'].get('base_topic', default_base_topic).lower()
 sleep_period = config['Daemon'].getint('period', 300)
+avg_sleep_period = config['Daemon'].getint('avg_poll_period', 0.1)
+avg_poll_amount = config['Daemon'].getint('avg_poll_amount', 1)
 miflora_cache_timeout = sleep_period - 1
 
 # Check configuration
@@ -431,10 +433,10 @@ while True:
         data = OrderedDict()
         cachedData: List[OrderedDict] = []
 
-        for i in range(1, 10):
+        for i in range(1, avg_poll_amount):
             cachedData.append(poll_data())
             flora['poller'].clear_cache()
-            sleep(0.1)
+            sleep(avg_sleep_period)
 
         for param,_ in parameters.items():
             data[param] = 0

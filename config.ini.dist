@@ -38,6 +38,12 @@
 # The period between two measurements in seconds (Default: 300)
 #period = 300
 
+# the amount of polls taken to get an average
+#avg_poll_amount = 10
+
+# The period between avg polling measurements in seconds (Default: 0.1)
+#avg_poll_period = 0.1
+
 [MQTT]
 
 # The hostname or IP address of the MQTT broker to connect to (Default: localhost)
