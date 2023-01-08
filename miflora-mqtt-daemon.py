@@ -117,7 +117,7 @@ else:
 
 base_topic = config['MQTT'].get('base_topic', default_base_topic).lower()
 sleep_period = config['Daemon'].getint('period', 300)
-avg_sleep_period = config['Daemon'].getint('avg_poll_period', 0.1)
+avg_sleep_period = config['Daemon'].getfloat('avg_poll_period', 0.1)
 avg_poll_amount = config['Daemon'].getint('avg_poll_amount', 1)
 miflora_cache_timeout = sleep_period - 1
 
