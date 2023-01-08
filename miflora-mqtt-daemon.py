@@ -8,6 +8,7 @@ import os.path
 import argparse
 from time import time, sleep, localtime, strftime
 from collections import OrderedDict
+from typing import List
 from colorama import init as colorama_init
 from colorama import Fore, Back, Style
 from configparser import ConfigParser
@@ -428,17 +429,24 @@ def poll_data():
 while True:
     for [flora_name, flora] in flores.items():
         data = OrderedDict()
-        cachedData = []
+        cachedData: List[OrderedDict] = []
 
         for i in range(1, 10):
             cachedData.append(poll_data())
             flora['poller'].clear_cache()
             sleep(0.5)
 
+        for param,_ in parameters.items():
+            data[param] = 0
+
         for item in cachedData:
-            for key in cachedData[item]:
-                data[key] = sum(cachedData[item][key]) / len(cachedData[item][key])
-                print_line('Averaged Result: {}'.format(json.dumps(data)))
+            for key, value in item.items():
+                data[key] += value
+
+        for key, value in data.items():
+            data[key] = value / len(cachedData)
+
+        print_line('Averaged Result: {}'.format(json.dumps(data)))
 
         if reporting_mode == 'mqtt-json':
             print_line('Publishing to MQTT topic "{}/{}"'.format(base_topic, flora_name))
