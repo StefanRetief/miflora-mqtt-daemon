@@ -434,7 +434,7 @@ while True:
         for i in range(1, 10):
             cachedData.append(poll_data())
             flora['poller'].clear_cache()
-            sleep(0.5)
+            sleep(0.1)
 
         for param,_ in parameters.items():
             data[param] = 0
