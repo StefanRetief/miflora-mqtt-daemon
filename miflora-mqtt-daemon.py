@@ -438,6 +438,7 @@ while True:
         for item in cachedData:
             for key in item:
                 data[key] = sum(item[key]) / len(item[key])
+                print_line('Averaged Result: {}'.format(json.dumps(data)))
 
         if reporting_mode == 'mqtt-json':
             print_line('Publishing to MQTT topic "{}/{}"'.format(base_topic, flora_name))
