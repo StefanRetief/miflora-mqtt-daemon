@@ -444,7 +444,7 @@ while True:
                 data[key] += value
 
         for key, value in data.items():
-            data[key] = value / len(cachedData)
+            data[key] = round(value / len(cachedData), 2)
 
         print_line('Averaged Result: {}'.format(json.dumps(data)))
 
