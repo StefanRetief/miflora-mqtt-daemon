@@ -436,7 +436,7 @@ while True:
             sleep(0.5)
 
         for item in cachedData:
-            for key in item:
+            for key in cachedData[item]:
                 data[key] = sum(cachedData[item][key]) / len(cachedData[item][key])
                 print_line('Averaged Result: {}'.format(json.dumps(data)))
 
